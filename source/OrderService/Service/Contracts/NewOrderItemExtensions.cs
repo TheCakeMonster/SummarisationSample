@@ -1,6 +1,6 @@
 ﻿using SummarisationSample.OrderService.Library;
 
-namespace SummarisationSample.OrderService.Contracts
+namespace SummarisationSample.OrderService.Service.Contracts
 {
     /// <summary>
     /// Extension methods for conversion to and from the NewOrderItem DTO

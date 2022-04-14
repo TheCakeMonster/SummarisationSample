@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using SummarisationSample.OrderService.Contracts;
+using SummarisationSample.OrderService.Service.Contracts;
 using SummarisationSample.OrderService.Library.DataContracts;
 using SummarisationSample.OrderService.Library;
 

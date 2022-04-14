@@ -1,4 +1,4 @@
-﻿namespace SummarisationSample.OrderService.Contracts
+﻿namespace SummarisationSample.OrderService.Service.Contracts
 {
     public class NewOrder
     {
