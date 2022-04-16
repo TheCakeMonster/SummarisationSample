@@ -1,13 +1,17 @@
+using SummarisationSample.ActivityService.Service.MessageHandling;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddInMemoryRepositories();
+builder.Services.AddTransient(typeof(IMessageReceiver<,>), typeof(KafkaMessageReceiver<,>));
+
+builder.Services.AddHostedService<MessageReceiverService>();
 
 var app = builder.Build();
 

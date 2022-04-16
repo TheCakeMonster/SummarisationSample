@@ -16,6 +16,11 @@ namespace SummarisationSample.ActivityService.Library
             return _activityTypes.FirstOrDefault(at => at.Value.ActivityTypeId == activityTypeId).Value;
         }
 
+        public static ActivityType GetActivityType(string activityTypeCode)
+        {
+            return _activityTypes[activityTypeCode];
+        }
+
         #region Private Helper Methods
 
         private static ConcurrentDictionary<string, ActivityType> InitialiseActivityTypes()

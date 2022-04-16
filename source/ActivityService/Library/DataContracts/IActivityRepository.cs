@@ -11,6 +11,6 @@ namespace SummarisationSample.ActivityService.Library.DataContracts
 
         Task<IList<Activity>> GetActivitiesForDateAsync(DateOnly activityDate);
 
-        Task<Activity> RecordActivity(IActivityMessage activityMessage);
+        Task<Activity?> RecordActivity(IActivityMessage activityMessage);
     }
 }

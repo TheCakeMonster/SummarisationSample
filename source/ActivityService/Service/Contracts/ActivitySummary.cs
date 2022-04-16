@@ -4,9 +4,9 @@
     {
         public DateOnly ActivityDate { get; set; }
 
-        public string ActivityTypeCode { get; set; }
+        public string ActivityTypeCode { get; set; } = string.Empty;
 
-        public string ActivityTypeName { get; set; }
+        public string ActivityTypeName { get; set; } = string.Empty;
 
         public int Quantity { get; set; }
     }

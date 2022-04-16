@@ -9,6 +9,10 @@ using System.Threading.Tasks;
 
 namespace SummarisationSample.ActivityService.InMemoryRepositories
 {
+
+    /// <summary>
+    /// In-memory implementation of the Activity Repository
+    /// </summary>
     internal class ActivityRepository : IActivityRepository
     {
         private static readonly HashSet<string> _messageRefs = new HashSet<string>();
@@ -32,20 +36,21 @@ namespace SummarisationSample.ActivityService.InMemoryRepositories
             return Task.FromResult(activities);
         }
 
-        public Task<Activity> RecordActivity(IActivityMessage activityMessage)
+        public Task<Activity?> RecordActivity(IActivityMessage activityMessage)
         {
-            Activity activity;
+            Activity? activity;
             DateOnly activityDate;
             ConcurrentDictionary<int, Activity>? activitiesDict;
 
-            if (_messageRefs.Contains(activityMessage.MessageRef)) return null;
+            if (_messageRefs.Contains(activityMessage.MessageRef)) return Task.FromResult<Activity?>(null);
 
             activityDate = DateOnly.FromDateTime(activityMessage.ActivityAt);
             activitiesDict = _activities.GetOrAdd(activityDate, (dt) => new ConcurrentDictionary<int, Activity>());
             activity = activitiesDict.GetOrAdd(activityMessage.ActivityTypeId, 
                 (dt) => new Activity() { ActivityDate = activityDate, ActivityTypeId = activityMessage.ActivityTypeId, Quantity = 1 });
+            _messageRefs.Add(activityMessage.MessageRef);
 
-            return Task.FromResult(activity);
+            return Task.FromResult<Activity?>(activity);
         }
     }
 }
