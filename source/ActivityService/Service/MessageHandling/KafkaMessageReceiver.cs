@@ -18,6 +18,8 @@ namespace SummarisationSample.ActivityService.Service.MessageHandling
         public KafkaMessageReceiver(ClientConfig options, ILogger<KafkaMessageReceiver<TKey, TValue>> logger)
         {
             _configuration = new ConsumerConfig(options);
+            _configuration.EnableAutoCommit = true;
+            _configuration.EnableAutoOffsetStore = false;
             _logger = logger;
         }
 
@@ -58,14 +60,14 @@ namespace SummarisationSample.ActivityService.Service.MessageHandling
         /// <param name="cancellationToken">Cancellation token used for handling graceful shutdown</param>
         private async Task AwaitMessageReceipt(IConsumer<TKey, TValue> consumer, CancellationToken cancellationToken)
         {
-            ConsumeResult<TKey, TValue> consumed = consumer.Consume(cancellationToken);
+            ConsumeResult<TKey, TValue> consumeResult = consumer.Consume(cancellationToken);
 
             if (OnMessageReceived is not null)
             {
-                await OnMessageReceived.Invoke(consumed.Message.Key, consumed.Message.Value);
+                await OnMessageReceived.Invoke(consumeResult.Message.Key, consumeResult.Message.Value);
             }
 
-            consumer.Commit();
+            consumer.StoreOffset(consumeResult);
         }
 
         /// <summary>

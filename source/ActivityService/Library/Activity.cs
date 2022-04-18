@@ -9,6 +9,7 @@ namespace SummarisationSample.ActivityService.Library
 {
     public class Activity
     {
+        private int _quantity;
         [Key]
         public int ActivityId { get; set; }
 
@@ -18,6 +19,15 @@ namespace SummarisationSample.ActivityService.Library
         [Required]
         public int ActivityTypeId { get; set; }
 
-        public int Quantity { get; set; }
+        public int Quantity 
+        { 
+            get { return _quantity; } 
+            set { _quantity = value; } 
+        }
+
+        public void IncrementQuantity()
+        { 
+            Interlocked.Increment(ref _quantity);
+        }
     }
 }

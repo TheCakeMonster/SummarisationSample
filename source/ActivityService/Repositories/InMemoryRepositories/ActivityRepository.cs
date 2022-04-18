@@ -18,8 +18,12 @@ namespace SummarisationSample.ActivityService.InMemoryRepositories
         private static readonly HashSet<string> _messageRefs = new HashSet<string>();
         private static readonly ConcurrentDictionary<DateOnly, ConcurrentDictionary<int, Activity>> _activities = 
             new ConcurrentDictionary<DateOnly, ConcurrentDictionary<int, Activity>>();
-        private static readonly object _activitiesLock = new object();
 
+        /// <summary>
+        /// Get the summaries for all activities performed for a specific date
+        /// </summary>
+        /// <param name="activityDate">The date for which activities are being requested</param>
+        /// <returns>IList<Activity> for the date in question</returns>
         public Task<IList<Activity>> GetActivitiesForDateAsync(DateOnly activityDate)
         {
             IList<Activity> activities = new List<Activity>();
@@ -36,21 +40,30 @@ namespace SummarisationSample.ActivityService.InMemoryRepositories
             return Task.FromResult(activities);
         }
 
-        public Task<Activity?> RecordActivity(IActivityMessage activityMessage)
+        /// <summary>
+        /// Record that an activity occurred, with rejection of duplicate messages
+        /// </summary>
+        /// <param name="activityMessage">The message we are to handle</param>
+        public Task RecordActivity(IActivityMessage activityMessage)
         {
             Activity? activity;
             DateOnly activityDate;
             ConcurrentDictionary<int, Activity>? activitiesDict;
 
-            if (_messageRefs.Contains(activityMessage.MessageRef)) return Task.FromResult<Activity?>(null);
+            // Check for previous handling of message - IdEmpotence
+            if (_messageRefs.Contains(activityMessage.MessageRef)) return Task.CompletedTask;
 
+            // Find (or create) and incerement the activity by date and activity type
             activityDate = DateOnly.FromDateTime(activityMessage.ActivityAt);
             activitiesDict = _activities.GetOrAdd(activityDate, (dt) => new ConcurrentDictionary<int, Activity>());
             activity = activitiesDict.GetOrAdd(activityMessage.ActivityTypeId, 
-                (dt) => new Activity() { ActivityDate = activityDate, ActivityTypeId = activityMessage.ActivityTypeId, Quantity = 1 });
+                (dt) => new Activity() { ActivityDate = activityDate, ActivityTypeId = activityMessage.ActivityTypeId, Quantity = 0 });
+            activity.IncrementQuantity();
+
+            // Mark message as handled - Idempotence
             _messageRefs.Add(activityMessage.MessageRef);
 
-            return Task.FromResult<Activity?>(activity);
+            return Task.CompletedTask;
         }
     }
 }
