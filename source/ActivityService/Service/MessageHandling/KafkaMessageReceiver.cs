@@ -10,30 +10,33 @@ namespace SummarisationSample.ActivityService.Service.MessageHandling
     /// <typeparam name="TValue">The type of message being received</typeparam>
     internal class KafkaMessageReceiver<TKey, TValue> : IMessageReceiver<TKey, TValue>
     {
-        private readonly ConsumerConfig _configuration;
+        private readonly ConsumerConfig _busConfiguration;
         private readonly ILogger _logger;
 
         public event Func<TKey, TValue, Task>? OnMessageReceived;
 
-        public KafkaMessageReceiver(ClientConfig options, ILogger<KafkaMessageReceiver<TKey, TValue>> logger)
+        public KafkaMessageReceiver(IConfiguration configuration, ILogger<KafkaMessageReceiver<TKey, TValue>> logger)
         {
-            _configuration = new ConsumerConfig(options);
-            _configuration.EnableAutoCommit = true;
-            _configuration.EnableAutoOffsetStore = false;
+            string connectionString = configuration.GetConnectionString("MessageBus");
+            _busConfiguration = new ConsumerConfig()
+            {
+                BootstrapServers = connectionString,
+                GroupId = "activityservice",
+                EnableAutoCommit = true,
+                EnableAutoOffsetStore = false
+            };
             _logger = logger;
         }
 
         /// <summary>
         /// Entry point for long-running message receipt
         /// </summary>
-        /// <param name="topics">The topics to which to subscribe</param>
         /// <param name="cancellationToken">Cancellation token used to manage shutdown</param>
-        public async Task ReceiveMessages(string topics, CancellationToken cancellationToken)
+        /// <param name="topics">The topics to which to subscribe</param>
+        public async Task ReceiveMessages(CancellationToken cancellationToken, string topics)
         {
-            var consumer = new ConsumerBuilder<TKey, TValue>(_configuration)
-                .Build();
-
-            consumer.Subscribe(topics);
+            using var consumer = await CreateConsumer(cancellationToken, topics);
+            if (consumer is null) return;
 
             while (!cancellationToken.IsCancellationRequested)
             {
@@ -49,8 +52,35 @@ namespace SummarisationSample.ActivityService.Service.MessageHandling
                 }
             }
 
-            consumer.Close();
-            consumer.Dispose();
+            if (consumer is not null) consumer.Close();
+
+        }
+
+        private async Task<IConsumer<TKey, TValue>?> CreateConsumer(CancellationToken cancellationToken, string topics)
+        {
+            IConsumer<TKey, TValue>? consumer = null;
+
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                try
+                {
+                    consumer = new ConsumerBuilder<TKey, TValue>(_busConfiguration)
+                        .SetValueDeserializer(new MessageDeserialiser<TValue>())
+                        .Build();
+
+                    consumer.Subscribe(topics);
+                    break;
+                }
+                catch (OperationCanceledException)
+                { }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Exception during connection to bus!");
+                    await Task.Delay(5000);
+                }
+            }
+
+            return consumer;
         }
 
         /// <summary>

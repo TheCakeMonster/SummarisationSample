@@ -27,7 +27,7 @@ namespace SummarisationSample.ActivityService.Service.MessageHandling
         /// <param name="stoppingToken">Cancellation token, used by the host to request shutdown</param>
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            await _messageReceiver.ReceiveMessages("order", stoppingToken);
+            await _messageReceiver.ReceiveMessages(stoppingToken, "summarisation.order");
         }
 
         /// <summary>

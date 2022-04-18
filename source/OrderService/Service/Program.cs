@@ -1,5 +1,6 @@
 using SummarisationSample.OrderService.Library;
 using SummarisationSample.OrderService.Repositories.InMemoryRepository;
+using SummarisationSample.OrderService.Service.Messaging;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +12,9 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddModelServices();
 builder.Services.AddInMemoryRepositories();
+
+builder.Services.AddTransient(typeof(MessagePublisher<,>));
+builder.Services.AddHostedService<MessagePublishingService>();
 
 var app = builder.Build();
 
