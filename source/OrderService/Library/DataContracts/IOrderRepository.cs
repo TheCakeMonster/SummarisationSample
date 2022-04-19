@@ -2,7 +2,6 @@
 {
     public interface IOrderRepository
     {
-
         Task<bool> SaveChangesAsync();
 
         Task<int> GetNextOrderId();
@@ -14,6 +13,12 @@
         Task<IList<Order>> GetOrdersAsync();
 
         Task PlaceOrderAsync(Order order);
+
+        Task<IList<ActivityMessage>> GetUnpublishedActivityMessagesAsync();
+
+        Task RecordActivityMessagePublishingFailureAsync(string messageRef);
+
+        Task MarkActivityMessagePublishedAsync(string messageRef);
 
     }
 }

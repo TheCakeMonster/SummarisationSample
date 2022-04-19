@@ -13,7 +13,8 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddModelServices();
 builder.Services.AddInMemoryRepositories();
 
-builder.Services.AddTransient(typeof(MessagePublisher<,>));
+builder.Services.AddSingleton(typeof(IMessageQueue<,>), typeof(MessageQueue<,>));
+builder.Services.AddSingleton(typeof(IMessagePublisher<,>), typeof(KafkaMessagePublisher<,>));
 builder.Services.AddHostedService<MessagePublishingService>();
 
 var app = builder.Build();

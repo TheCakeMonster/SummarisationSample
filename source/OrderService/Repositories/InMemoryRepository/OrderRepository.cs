@@ -1,6 +1,7 @@
 ﻿using SummarisationSample.OrderService.Library;
 using SummarisationSample.OrderService.Library.DataContracts;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,7 +16,14 @@ namespace SummarisationSample.OrderService.Repositories.InMemoryRepository
     public class OrderRepository : IOrderRepository
     {
         private static int _maxOrderId = 0;
-        private static IList<Order> _orders = new List<Order>();
+        private static ConcurrentBag<Order> _orders = new ConcurrentBag<Order>();
+        private static ConcurrentBag<ActivityMessage> _messages = new ConcurrentBag<ActivityMessage>();
+        private readonly IMessageQueue<string, ActivityMessage> _messageQueue;
+
+        public OrderRepository(IMessageQueue<string, ActivityMessage> messageQueue)
+        {
+            _messageQueue = messageQueue;
+        }
 
         public Task<int> GetNextOrderId()
         {
@@ -33,7 +41,10 @@ namespace SummarisationSample.OrderService.Repositories.InMemoryRepository
 
         public Task<IList<Order>> GetOrdersAsync()
         {
-            return Task.FromResult(_orders);
+            IList<Order> orders;
+
+            orders = _orders.ToList();
+            return Task.FromResult(orders);
         }
 
         public Task<IList<Order>> GetOrdersForCustomerAsync(string customerRef)
@@ -41,12 +52,53 @@ namespace SummarisationSample.OrderService.Repositories.InMemoryRepository
             IList<Order> orders;
 
             orders = _orders.Where(o => o.CustomerRef.Equals(customerRef, StringComparison.CurrentCultureIgnoreCase)).ToList();
-            return Task.FromResult(_orders);
+            return Task.FromResult(orders);
         }
 
         public Task PlaceOrderAsync(Order order)
         {
+            ActivityMessage activityMessage;
+
+            activityMessage = new ActivityMessage()
+            {
+                ActivityTypeCode = ActivityTypeCodes.OrderCreated,
+                ActivityAt = DateTime.Now
+            };
             _orders.Add(order);
+            _messages.Add(activityMessage);
+            _messageQueue.Enqueue("order", activityMessage);
+
+            return Task.CompletedTask;
+        }
+
+        public Task<IList<ActivityMessage>> GetUnpublishedActivityMessagesAsync()
+        {
+            IList<ActivityMessage> messages;
+
+            messages = _messages.Where(o => !o.PublishedAt.HasValue).ToList();
+            return Task.FromResult(messages);
+        }
+
+        public Task MarkActivityMessagePublishedAsync(string messageRef)
+        {
+            ActivityMessage? message;
+
+            message = _messages.FirstOrDefault(o => !o.MessageRef.Equals(messageRef));
+            if (message is null) throw new ArgumentOutOfRangeException(nameof(messageRef));
+
+            message.PublishedAt = DateTime.Now;
+
+            return Task.CompletedTask;
+        }
+
+        public Task RecordActivityMessagePublishingFailureAsync(string messageRef)
+        {
+            ActivityMessage? message;
+
+            message = _messages.FirstOrDefault(o => !o.MessageRef.Equals(messageRef));
+            if (message is null) throw new ArgumentOutOfRangeException(nameof(messageRef));
+
+            message.PublishedAt = DateTime.Now;
 
             return Task.CompletedTask;
         }

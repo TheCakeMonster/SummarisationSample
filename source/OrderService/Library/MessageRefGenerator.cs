@@ -1,6 +1,6 @@
-﻿namespace SummarisationSample.OrderService.Service.Messaging
+﻿namespace SummarisationSample.OrderService.Library
 {
-    internal class MessageRefGenerator
+    public class MessageRefGenerator
     {
         internal static string Generate()
         {
