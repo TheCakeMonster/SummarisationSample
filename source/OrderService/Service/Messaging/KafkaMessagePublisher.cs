@@ -10,12 +10,13 @@ namespace SummarisationSample.OrderService.Service.Messaging
     {
         private readonly string _busConnectionString;
         private readonly ILogger _logger;
-        private readonly IMessageQueue<TKey, TValue> _queue;
+        private readonly IMessageQueue<TKey, TValue> _messageQueue;
+        private Task? _publishingTask;
         private int retryDelay = 50;
 
         public KafkaMessagePublisher(IMessageQueue<TKey, TValue> messageQueue, IConfiguration configuration, ILogger<KafkaMessagePublisher<TKey, TValue>> logger)
         {
-            _queue = messageQueue;
+            _messageQueue = messageQueue;
             _busConnectionString = configuration.GetConnectionString("MessageBus");
             _logger = logger;
         }
@@ -24,16 +25,32 @@ namespace SummarisationSample.OrderService.Service.Messaging
 
         public event Func<TKey, TValue, Task>? MessagePublishingFailure;
 
-        public async Task PerformPublishingAsync(CancellationToken cancellationToken, string topic)
+        /// <summary>
+        /// Entrypoint for the long-running operation of publishing messages
+        /// </summary>
+        /// <param name="topic">The topic to which messages are being published</param>
+        /// <param name="cancellationToken">The cancellation token used to manage execution</param>
+        public Task StartPublishingAsync(string topic, CancellationToken cancellationToken)
         {
+            TaskFactory taskFactory = new TaskFactory();
+            TaskCreationOptions creationOptions = TaskCreationOptions.LongRunning | TaskCreationOptions.DenyChildAttach;
+
+            _publishingTask = taskFactory.StartNew(async () => await DoPublishingAsync(topic, cancellationToken), creationOptions);
+
+            return Task.CompletedTask;
+        }
+
+        #region Private Helper Methods
+
+        private async Task DoPublishingAsync(string topic, CancellationToken cancellationToken)
+        {
+            await Task.Yield();
 
             using IProducer<TKey, TValue>? producer = await CreateProducerAsync(cancellationToken);
             if (producer is null) return;
 
             await PublishMessagesAsync(producer, topic, cancellationToken);
         }
-
-        #region Private Helper Methods
 
         private async Task<IProducer<TKey, TValue>?> CreateProducerAsync(CancellationToken cancellationToken)
         {
@@ -74,7 +91,7 @@ namespace SummarisationSample.OrderService.Service.Messaging
             {
                 try
                 {
-                    if (!_queue.TryPeek(out queueItem))
+                    if (!_messageQueue.TryPeek(out queueItem))
                     {
                         await Task.Delay(25);
                         continue;
@@ -82,7 +99,7 @@ namespace SummarisationSample.OrderService.Service.Messaging
 
                     var result = await PublishMessageAsync(producer, topic, queueItem, cancellationToken);
 
-                    _queue.TryDequeue(out queueItem);
+                    _messageQueue.TryDequeue(out queueItem);
                 }
                 catch (OperationCanceledException)
                 { }

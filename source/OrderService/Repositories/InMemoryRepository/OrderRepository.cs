@@ -75,7 +75,11 @@ namespace SummarisationSample.OrderService.Repositories.InMemoryRepository
         {
             IList<ActivityMessage> messages;
 
-            messages = _messages.Where(o => !o.PublishedAt.HasValue).ToList();
+            // Read unpublished messages, excluding any that are considered poison messages
+            messages = _messages.Where(
+                m => !m.PublishedAt.HasValue && m.PublishingFailures < 10)
+                .OrderBy(m => m.ActivityAt)
+                .ToList();
             return Task.FromResult(messages);
         }
 
@@ -83,7 +87,7 @@ namespace SummarisationSample.OrderService.Repositories.InMemoryRepository
         {
             ActivityMessage? message;
 
-            message = _messages.FirstOrDefault(o => !o.MessageRef.Equals(messageRef));
+            message = _messages.FirstOrDefault(m => m.MessageRef.Equals(messageRef));
             if (message is null) throw new ArgumentOutOfRangeException(nameof(messageRef));
 
             message.PublishedAt = DateTime.Now;
@@ -95,7 +99,7 @@ namespace SummarisationSample.OrderService.Repositories.InMemoryRepository
         {
             ActivityMessage? message;
 
-            message = _messages.FirstOrDefault(o => !o.MessageRef.Equals(messageRef));
+            message = _messages.FirstOrDefault(m => m.MessageRef.Equals(messageRef));
             if (message is null) throw new ArgumentOutOfRangeException(nameof(messageRef));
 
             message.PublishedAt = DateTime.Now;

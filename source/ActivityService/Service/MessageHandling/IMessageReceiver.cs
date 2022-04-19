@@ -10,7 +10,7 @@ namespace SummarisationSample.ActivityService.Service.MessageHandling
     {
         event Func<TKey, TValue, Task>? OnMessageReceived;
 
-        Task ReceiveMessages(CancellationToken stoppingToken, string topics);
+        Task StartMessageReceiptAsync(string topics, CancellationToken stoppingToken);
 
         Task ConfirmMessageReceipt(TKey key);
     }

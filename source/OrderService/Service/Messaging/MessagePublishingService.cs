@@ -29,9 +29,9 @@ namespace SummarisationSample.OrderService.Service.Messaging
             publisher = _scope.ServiceProvider.GetRequiredService<IMessagePublisher<string, PublishedActivityMessage>>();
             publisher.MessagePublished += Publisher_OnMessagePublished;
             publisher.MessagePublishingFailure += Publisher_OnMessagePublishingFailure;
-            await EnqueueUnpublishedMessages(_publishingQueue, _orderRepository);
+            await EnqueueUnpublishedMessagesAsync(_publishingQueue, _orderRepository);
 
-            await publisher.PerformPublishingAsync(stoppingToken, "summarisation.order");
+            await publisher.StartPublishingAsync("summarisation.order", stoppingToken);
         }
 
         #region Private Helper Methods
@@ -42,7 +42,7 @@ namespace SummarisationSample.OrderService.Service.Messaging
         /// <param name="messagePublisher">The publisher of messages</param>
         /// <param name="orderRepository">The repository from which unpublished messages can be retrieved</param>
         /// <returns></returns>
-        private async Task EnqueueUnpublishedMessages(IMessageQueue<string, PublishedActivityMessage> messagePublisher, IOrderRepository orderRepository)
+        private async Task EnqueueUnpublishedMessagesAsync(IMessageQueue<string, PublishedActivityMessage> messagePublisher, IOrderRepository orderRepository)
         {
             IList<Library.ActivityMessage> unpublishedMessages;
 

@@ -29,7 +29,7 @@ namespace SummarisationSample.ActivityService.Service.MessageHandling
         {
             await Task.Yield();
 
-            await _messageReceiver.ReceiveMessages(stoppingToken, "summarisation.order");
+            await _messageReceiver.StartMessageReceiptAsync("summarisation.order", stoppingToken);
         }
 
         /// <summary>

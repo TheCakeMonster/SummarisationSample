@@ -8,6 +8,6 @@ namespace SummarisationSample.OrderService.Service.Messaging
         event Func<TKey, TValue, Task>? MessagePublished;
         event Func<TKey, TValue, Task>? MessagePublishingFailure;
 
-        Task PerformPublishingAsync(CancellationToken cancellationToken, string topic);
+        Task StartPublishingAsync(string topic, CancellationToken cancellationToken);
     }
 }

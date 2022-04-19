@@ -12,6 +12,7 @@ namespace SummarisationSample.ActivityService.Service.MessageHandling
     {
         private readonly ConsumerConfig _busConfiguration;
         private readonly ILogger _logger;
+        private Task? _receiptTask;
 
         public event Func<TKey, TValue, Task>? OnMessageReceived;
 
@@ -31,11 +32,21 @@ namespace SummarisationSample.ActivityService.Service.MessageHandling
         /// <summary>
         /// Entry point for long-running message receipt
         /// </summary>
-        /// <param name="cancellationToken">Cancellation token used to manage shutdown</param>
         /// <param name="topics">The topics to which to subscribe</param>
-        public async Task ReceiveMessages(CancellationToken cancellationToken, string topics)
+        /// <param name="cancellationToken">Cancellation token used to manage shutdown</param>
+        public Task StartMessageReceiptAsync(string topics, CancellationToken cancellationToken)
         {
-            using var consumer = await CreateConsumer(cancellationToken, topics);
+            TaskFactory taskFactory = new TaskFactory();
+            TaskCreationOptions creationOptions = TaskCreationOptions.LongRunning | TaskCreationOptions.DenyChildAttach;
+
+            _receiptTask = taskFactory.StartNew(async () => await ReceiveMessagesAsync(topics, cancellationToken), creationOptions);
+
+            return Task.CompletedTask;
+        }
+
+        private async Task ReceiveMessagesAsync(string topics, CancellationToken cancellationToken)
+        {
+            using var consumer = await CreateConsumer(topics, cancellationToken);
             if (consumer is null) return;
 
             while (!cancellationToken.IsCancellationRequested)
@@ -56,7 +67,7 @@ namespace SummarisationSample.ActivityService.Service.MessageHandling
 
         }
 
-        private async Task<IConsumer<TKey, TValue>?> CreateConsumer(CancellationToken cancellationToken, string topics)
+        private async Task<IConsumer<TKey, TValue>?> CreateConsumer(string topics, CancellationToken cancellationToken)
         {
             IConsumer<TKey, TValue>? consumer = null;
 
