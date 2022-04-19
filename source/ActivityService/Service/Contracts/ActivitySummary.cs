@@ -2,7 +2,7 @@
 {
     public class ActivitySummary
     {
-        public DateOnly ActivityDate { get; set; }
+        public string ActivityDate { get; set; } = DateTime.Now.ToString("yyyy-MM-dd");
 
         public string ActivityTypeCode { get; set; } = string.Empty;
 

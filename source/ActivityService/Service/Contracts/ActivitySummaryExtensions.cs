@@ -29,7 +29,7 @@ namespace SummarisationSample.ActivityService.Service.Contracts
 
             return new ActivitySummary()
             {
-                ActivityDate = activity.ActivityDate,
+                ActivityDate = activity.ActivityDate.ToDateOnlyString(),
                 ActivityTypeCode = activityType.ActivityTypeCode,
                 ActivityTypeName = activityType.ActivityTypeName,
                 Quantity = activity.Quantity

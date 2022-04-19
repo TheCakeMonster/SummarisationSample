@@ -18,13 +18,19 @@ namespace SummarisationSample.ActivityService.Service.Controllers
             _activityRepository = activityRepository;
         }
 
-        [HttpGet(Name = "GetActivitySummaries")]
-        public async Task<ActionResult<IEnumerable<ActivitySummary>>> GetActivitySummaries(DateOnly activityDate)
+        [HttpGet("{activityDate}", Name = "GetActivitySummaries")]
+        public async Task<ActionResult<IEnumerable<ActivitySummary>>> GetActivitySummaries(string activityDate)
         {
+            DateOnly requestedDate;
             IList<Activity> activities;
             IList<ActivitySummary> activitySummaries;
 
-            activities = await _activityRepository.GetActivitiesForDateAsync(activityDate);
+            if (!DateOnly.TryParse(activityDate, out requestedDate))
+            {
+                return BadRequest();
+            }
+
+            activities = await _activityRepository.GetActivitiesForDateAsync(requestedDate);
             if (activities is null)
             {
                 return Ok(new List<ActivitySummary>());
