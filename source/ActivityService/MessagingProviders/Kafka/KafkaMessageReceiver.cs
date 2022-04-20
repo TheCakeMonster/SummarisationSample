@@ -1,6 +1,8 @@
 ﻿using Confluent.Kafka;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
-namespace SummarisationSample.ActivityService.Service.MessageHandling
+namespace SummarisationSample.ActivityService.Messaging.Kafka
 {
 
     /// <summary>
@@ -11,42 +13,49 @@ namespace SummarisationSample.ActivityService.Service.MessageHandling
     internal class KafkaMessageReceiver<TKey, TValue> : IMessageReceiver<TKey, TValue>
     {
         private readonly ConsumerConfig _busConfiguration;
+        private readonly ISubscriptionFactory _subscriptionFactory;
         private readonly ILogger _logger;
         private Task? _receiptTask;
 
         public event Func<TKey, TValue, Task>? OnMessageReceived;
 
-        public KafkaMessageReceiver(IConfiguration configuration, ILogger<KafkaMessageReceiver<TKey, TValue>> logger)
+        public KafkaMessageReceiver(IConfiguration configuration, ISubscriptionFactory subscriptionFactory, ILogger<KafkaMessageReceiver<TKey, TValue>> logger)
         {
             string connectionString = configuration.GetConnectionString("MessageBus");
             _busConfiguration = new ConsumerConfig()
             {
                 BootstrapServers = connectionString,
-                GroupId = "activityservice",
                 EnableAutoCommit = true,
                 EnableAutoOffsetStore = false
             };
+            _subscriptionFactory = subscriptionFactory;
             _logger = logger;
         }
 
         /// <summary>
         /// Entry point for long-running message receipt
         /// </summary>
-        /// <param name="topics">The topics to which to subscribe</param>
+        /// <param name="subscriptionName">The name of the subscription to be used by the receiver</param>
         /// <param name="cancellationToken">Cancellation token used to manage shutdown</param>
-        public Task StartMessageReceiptAsync(string topics, CancellationToken cancellationToken)
+        public Task StartMessageReceiptAsync(string subscriptionName, CancellationToken cancellationToken)
         {
-            TaskFactory taskFactory = new TaskFactory();
-            TaskCreationOptions creationOptions = TaskCreationOptions.LongRunning | TaskCreationOptions.DenyChildAttach;
+            ISubscriptionConfiguration untypedConfig;
+            KafkaSubscriptionConfiguration? subscriptionConfig;
 
-            _receiptTask = taskFactory.StartNew(async () => await ReceiveMessagesAsync(topics, cancellationToken), creationOptions);
+            untypedConfig = _subscriptionFactory.GetSubscriptionConfiguration(subscriptionName);
+            if (untypedConfig is null) throw new ArgumentException(nameof(subscriptionName));
+            subscriptionConfig = untypedConfig as KafkaSubscriptionConfiguration;
+            if (subscriptionConfig is null) throw new ArgumentException(nameof(untypedConfig));
+
+            _busConfiguration.GroupId = subscriptionConfig.ConsumerGroupName;
+            _receiptTask = Task.Run(async () => await ReceiveMessagesAsync(subscriptionConfig.Topics, cancellationToken));
 
             return Task.CompletedTask;
         }
 
         private async Task ReceiveMessagesAsync(string topics, CancellationToken cancellationToken)
         {
-            using var consumer = await CreateConsumer(topics, cancellationToken);
+            using IConsumer<TKey, TValue>? consumer = await CreateConsumer(topics, cancellationToken);
             if (consumer is null) return;
 
             while (!cancellationToken.IsCancellationRequested)
@@ -86,7 +95,7 @@ namespace SummarisationSample.ActivityService.Service.MessageHandling
                 { }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Exception during connection to bus!");
+                    _logger.LogError(ex, "Exception during connection to Kafka!");
                     await Task.Delay(5000);
                 }
             }

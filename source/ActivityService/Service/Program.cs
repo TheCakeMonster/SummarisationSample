@@ -9,8 +9,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddInMemoryRepositories();
-builder.Services.AddTransient(typeof(IMessageReceiver<,>), typeof(KafkaMessageReceiver<,>));
-
+builder.Services.AddKafkaMessaging();
 builder.Services.AddHostedService<MessageReceiverService>();
 
 var app = builder.Build();

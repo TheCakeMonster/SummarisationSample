@@ -1,6 +1,6 @@
-﻿using Confluent.Kafka;
-using SummarisationSample.ActivityService.Library;
+﻿using SummarisationSample.ActivityService.Library;
 using SummarisationSample.ActivityService.Library.DataContracts;
+using SummarisationSample.ActivityService.Messaging;
 using SummarisationSample.ActivityService.Service.Contracts;
 
 namespace SummarisationSample.ActivityService.Service.MessageHandling
@@ -29,7 +29,7 @@ namespace SummarisationSample.ActivityService.Service.MessageHandling
         {
             await Task.Yield();
 
-            await _messageReceiver.StartMessageReceiptAsync("summarisation.order", stoppingToken);
+            await _messageReceiver.StartMessageReceiptAsync("ActivityService", stoppingToken);
         }
 
         /// <summary>

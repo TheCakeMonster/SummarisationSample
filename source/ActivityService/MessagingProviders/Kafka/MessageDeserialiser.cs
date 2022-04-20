@@ -1,7 +1,7 @@
 ﻿using Confluent.Kafka;
 using System.Text.Json;
 
-namespace SummarisationSample.ActivityService.Service.MessageHandling
+namespace SummarisationSample.ActivityService.Messaging.Kafka
 {
     public class MessageDeserialiser<T> : IDeserializer<T>
     {
