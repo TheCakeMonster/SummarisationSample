@@ -5,6 +5,9 @@ using SummarisationSample.OrderService.Library;
 
 namespace SummarisationSample.OrderService.Service.Controllers
 {
+    /// <summary>
+    /// Public API exposed to consumers who are interested in orders
+    /// </summary>
     [ApiController]
     [Route("[controller]")]
     public class OrdersController : ControllerBase

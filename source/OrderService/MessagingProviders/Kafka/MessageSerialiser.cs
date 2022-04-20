@@ -2,7 +2,7 @@
 using System.Text;
 using System.Text.Json;
 
-namespace SummarisationSample.OrderService.Service.Messaging
+namespace SummarisationSample.OrderService.Messaging.Kafka
 {
     public class MessageSerialiser<TValue> : ISerializer<TValue>
     {

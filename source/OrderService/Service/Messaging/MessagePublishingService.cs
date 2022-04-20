@@ -1,37 +1,46 @@
 ﻿using SummarisationSample.OrderService.Library;
 using SummarisationSample.OrderService.Library.DataContracts;
+using SummarisationSample.OrderService.Messaging;
 using SummarisationSample.OrderService.Service.Contracts;
 
 namespace SummarisationSample.OrderService.Service.Messaging
 {
+    /// <summary>
+    /// Background service that is responsible for publishing messages
+    /// </summary>
     public class MessagePublishingService : BackgroundService
     {
-        private readonly IServiceScope _scope;
+        private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger _logger;
-        private readonly IOrderRepository _orderRepository;
         private readonly IMessageQueue<string, ActivityMessage> _sourceQueue;
         private readonly IMessageQueue<string, PublishedActivityMessage> _publishingQueue;
+        private readonly IMessagePublisher<string, PublishedActivityMessage> _publisher;
 
-        public MessagePublishingService(IServiceScopeFactory serviceScopeFactory)
+        public MessagePublishingService(IServiceScopeFactory serviceScopeFactory, 
+            IMessageQueue<string, ActivityMessage> sourceQueue, 
+            IMessageQueue<string, PublishedActivityMessage> publishingQueue,
+            IMessagePublisher<string, PublishedActivityMessage> publisher,
+            ILogger<MessagePublishingService> logger)
         {
-            _scope = serviceScopeFactory.CreateScope();
-            _logger = _scope.ServiceProvider.GetRequiredService<ILogger<MessagePublishingService>>();
-            _orderRepository = _scope.ServiceProvider.GetRequiredService<IOrderRepository>();
-            _sourceQueue = _scope.ServiceProvider.GetRequiredService<IMessageQueue<string, ActivityMessage>>();
+            _scopeFactory = serviceScopeFactory;
+            _logger = logger;
+            _sourceQueue = sourceQueue;
             _sourceQueue.Enqueued += Source_OnEnqueued;
-            _publishingQueue = _scope.ServiceProvider.GetRequiredService<IMessageQueue<string, PublishedActivityMessage>>();
+            _publishingQueue = publishingQueue;
+            _publisher = publisher;
+            _publisher.MessagePublished += Publisher_OnMessagePublished;
+            _publisher.MessagePublishingFailure += Publisher_OnMessagePublishingFailure;
         }
 
+        /// <summary>
+        /// Entry point of the background service, which initiates the work to be done
+        /// </summary>
+        /// <param name="stoppingToken">The token used to control the lifetime of the background service</param>
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            IMessagePublisher<string, PublishedActivityMessage> publisher;
+            await EnqueueUnpublishedMessagesAsync(_publishingQueue);
 
-            publisher = _scope.ServiceProvider.GetRequiredService<IMessagePublisher<string, PublishedActivityMessage>>();
-            publisher.MessagePublished += Publisher_OnMessagePublished;
-            publisher.MessagePublishingFailure += Publisher_OnMessagePublishingFailure;
-            await EnqueueUnpublishedMessagesAsync(_publishingQueue, _orderRepository);
-
-            await publisher.StartPublishingAsync("summarisation.order", stoppingToken);
+            await _publisher.StartPublishingAsync("summarisation.order", stoppingToken);
         }
 
         #region Private Helper Methods
@@ -42,9 +51,13 @@ namespace SummarisationSample.OrderService.Service.Messaging
         /// <param name="messagePublisher">The publisher of messages</param>
         /// <param name="orderRepository">The repository from which unpublished messages can be retrieved</param>
         /// <returns></returns>
-        private async Task EnqueueUnpublishedMessagesAsync(IMessageQueue<string, PublishedActivityMessage> messagePublisher, IOrderRepository orderRepository)
+        private async Task EnqueueUnpublishedMessagesAsync(IMessageQueue<string, PublishedActivityMessage> messagePublisher)
         {
             IList<Library.ActivityMessage> unpublishedMessages;
+            IOrderRepository orderRepository;
+
+            using IServiceScope serviceScope = _scopeFactory.CreateScope();
+            orderRepository = serviceScope.ServiceProvider.GetRequiredService<IOrderRepository>();
 
             unpublishedMessages = await orderRepository.GetUnpublishedActivityMessagesAsync();
             foreach (Library.ActivityMessage unpublishedMessage in unpublishedMessages)
@@ -53,25 +66,49 @@ namespace SummarisationSample.OrderService.Service.Messaging
             }
         }
 
+        /// <summary>
+        /// Handler for the Enqueued event in the source message queue
+        /// Translates items from the source and puts them in the publishing queue
+        /// </summary>
         private void Source_OnEnqueued()
         {
             QueueItem<string, ActivityMessage>? queueItem;
 
             while (_sourceQueue.TryDequeue(out queueItem))
             {
-                if (queueItem is null) continue;
+                if (queueItem is null) break;
                 _publishingQueue.Enqueue(queueItem.Key, queueItem.Value.ToPublishedActivityMessage());
             }
         }
 
+        /// <summary>
+        /// Handler for the publisher's MessagePublished event, using the repository to 
+        /// mark an activity message as having been published
+        /// </summary>
+        /// <param name="key">The key of the message published</param>
+        /// <param name="message">The message that was published</param>
         private async Task Publisher_OnMessagePublished(string key, PublishedActivityMessage message)
         {
-            await _orderRepository.MarkActivityMessagePublishedAsync(message.MessageRef);
+            IOrderRepository orderRepository;
+
+            using IServiceScope serviceScope = _scopeFactory.CreateScope();
+            orderRepository = serviceScope.ServiceProvider.GetRequiredService<IOrderRepository>();
+            await orderRepository.MarkActivityMessagePublishedAsync(message.MessageRef);
         }
 
+        /// <summary>
+        /// Handler for the publisher's MessagePublishingFailure event, using the repository to 
+        /// mark an activity message as having failed publishing (to control poison messages)
+        /// </summary>
+        /// <param name="key">The key of the message that failed to publish</param>
+        /// <param name="message">The message that failed to publish</param>
         private async Task Publisher_OnMessagePublishingFailure(string key, PublishedActivityMessage message)
         {
-            await _orderRepository.RecordActivityMessagePublishingFailureAsync(message.MessageRef);
+            IOrderRepository orderRepository;
+
+            using IServiceScope serviceScope = _scopeFactory.CreateScope();
+            orderRepository = serviceScope.ServiceProvider.GetRequiredService<IOrderRepository>();
+            await orderRepository.RecordActivityMessagePublishingFailureAsync(message.MessageRef);
         }
 
         #endregion

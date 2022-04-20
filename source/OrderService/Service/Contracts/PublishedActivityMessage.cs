@@ -1,6 +1,6 @@
 ﻿namespace SummarisationSample.OrderService.Service.Contracts
 {
-    internal class PublishedActivityMessage
+    public class PublishedActivityMessage
     {
         public string MessageRef { get; set; } = string.Empty;
 

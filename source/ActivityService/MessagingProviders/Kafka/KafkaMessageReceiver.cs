@@ -53,6 +53,12 @@ namespace SummarisationSample.ActivityService.Messaging.Kafka
             return Task.CompletedTask;
         }
 
+        /// <summary>
+        /// Entry point for background execution; creates a consumer and then
+        /// waits for messages to handle, processing them as they arrive
+        /// </summary>
+        /// <param name="topics">The topics to which to subscribe</param>
+        /// <param name="cancellationToken">The token used to manage the lifetime of the background service</param>
         private async Task ReceiveMessagesAsync(string topics, CancellationToken cancellationToken)
         {
             using IConsumer<TKey, TValue>? consumer = await CreateConsumer(topics, cancellationToken);
@@ -76,6 +82,11 @@ namespace SummarisationSample.ActivityService.Messaging.Kafka
 
         }
 
+        /// <summary>
+        /// Create a consumer, with exception handling and basic retries
+        /// </summary>
+        /// <param name="topics">The topics to which to subscribe</param>
+        /// <param name="cancellationToken">The token used to manage the lifetime of the background service</param>
         private async Task<IConsumer<TKey, TValue>?> CreateConsumer(string topics, CancellationToken cancellationToken)
         {
             IConsumer<TKey, TValue>? consumer = null;

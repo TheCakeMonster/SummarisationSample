@@ -9,13 +9,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Confluent.Kafka" Version="1.8.2" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.14.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Library\SummarisationSample.OrderService.Library.csproj" />
+    <ProjectReference Include="..\MessagingProviders\Kafka\SummarisationSample.OrderService.Messaging.Kafka.csproj" />
+    <ProjectReference Include="..\Messaging\SummarisationSample.OrderService.Messaging.csproj" />
     <ProjectReference Include="..\Repositories\InMemoryRepository\SummarisationSample.OrderService.Repositories.InMemoryRepository.csproj" />
   </ItemGroup>
 

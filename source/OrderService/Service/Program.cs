@@ -1,4 +1,5 @@
 using SummarisationSample.OrderService.Library;
+using SummarisationSample.OrderService.Messaging;
 using SummarisationSample.OrderService.Repositories.InMemoryRepository;
 using SummarisationSample.OrderService.Service.Messaging;
 
@@ -12,9 +13,9 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddModelServices();
 builder.Services.AddInMemoryRepositories();
+builder.Services.AddKafkaMessaging();
 
 builder.Services.AddSingleton(typeof(IMessageQueue<,>), typeof(MessageQueue<,>));
-builder.Services.AddSingleton(typeof(IMessagePublisher<,>), typeof(KafkaMessagePublisher<,>));
 builder.Services.AddHostedService<MessagePublishingService>();
 
 var app = builder.Build();

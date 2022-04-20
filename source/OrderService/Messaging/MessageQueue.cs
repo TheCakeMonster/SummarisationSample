@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SummarisationSample.OrderService.Service.Messaging
+namespace SummarisationSample.OrderService.Messaging
 {
     public class MessageQueue<TKey, TValue> : IMessageQueue<TKey, TValue>
     {

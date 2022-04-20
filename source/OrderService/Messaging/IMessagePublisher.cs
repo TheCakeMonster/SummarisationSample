@@ -1,7 +1,5 @@
 ﻿
-using SummarisationSample.OrderService.Library;
-
-namespace SummarisationSample.OrderService.Service.Messaging
+namespace SummarisationSample.OrderService.Messaging
 {
     public interface IMessagePublisher<TKey, TValue>
     {
