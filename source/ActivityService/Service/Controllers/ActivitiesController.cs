@@ -5,6 +5,9 @@ using SummarisationSample.ActivityService.Service.Contracts;
 
 namespace SummarisationSample.ActivityService.Service.Controllers
 {
+    /// <summary>
+    /// Publicly exposed API endpoint for use by consumers
+    /// </summary>
     [ApiController]
     [Route("[controller]")]
     public class ActivitiesController : ControllerBase
