@@ -18,6 +18,7 @@ namespace Microsoft.Extensions.DependencyInjection
         public static IServiceCollection AddKafkaMessaging(this IServiceCollection services)
         {
             services.AddSingleton(typeof(IMessagePublisher<,>), typeof(KafkaMessagePublisher<,>));
+            services.AddTransient<IPublicationFactory, KafkaPublicationFactory>();
             return services;
         }
     }

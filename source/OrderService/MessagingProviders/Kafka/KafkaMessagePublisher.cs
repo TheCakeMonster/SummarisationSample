@@ -17,12 +17,15 @@ namespace SummarisationSample.OrderService.Messaging.Kafka
         private readonly string _busConnectionString;
         private readonly ILogger _logger;
         private readonly IMessageQueue<TKey, TValue> _messageQueue;
+        private readonly IPublicationFactory _publicationFactory;
         private Task? _publishingTask;
         private int retryDelay = 50;
 
-        public KafkaMessagePublisher(IMessageQueue<TKey, TValue> messageQueue, IConfiguration configuration, ILogger<KafkaMessagePublisher<TKey, TValue>> logger)
+        public KafkaMessagePublisher(IMessageQueue<TKey, TValue> messageQueue, IPublicationFactory publicationFactory,
+            IConfiguration configuration, ILogger<KafkaMessagePublisher<TKey, TValue>> logger)
         {
             _messageQueue = messageQueue;
+            _publicationFactory = publicationFactory;
             _busConnectionString = configuration.GetConnectionString("MessageBus");
             _logger = logger;
         }
@@ -34,11 +37,19 @@ namespace SummarisationSample.OrderService.Messaging.Kafka
         /// <summary>
         /// Entrypoint for the long-running operation of publishing messages
         /// </summary>
-        /// <param name="topic">The topic to which messages are being published</param>
+        /// <param name="publicationName">The name of the publication to which messages are being published</param>
         /// <param name="cancellationToken">The cancellation token used to manage execution</param>
-        public Task StartPublishingAsync(string topic, CancellationToken cancellationToken)
+        public Task StartPublishingAsync(string publicationName, CancellationToken cancellationToken)
         {
-            _publishingTask = Task.Run(async () => await DoPublishingAsync(topic, cancellationToken));
+            IPublicationConfiguration untypedConfig;
+            KafkaPublicationConfiguration? publicationConfig;
+
+            untypedConfig = _publicationFactory.GetPublicationConfiguration(publicationName);
+            if (untypedConfig is null) throw new ArgumentException(nameof(publicationName));
+            publicationConfig = untypedConfig as KafkaPublicationConfiguration;
+            if (publicationConfig is null) throw new ArgumentException(nameof(untypedConfig));
+
+            _publishingTask = Task.Run(async () => await DoPublishingAsync(publicationConfig.Topic, cancellationToken));
 
             return Task.CompletedTask;
         }
@@ -111,7 +122,7 @@ namespace SummarisationSample.OrderService.Messaging.Kafka
                 {
                     if (!_messageQueue.TryPeek(out queueItem))
                     {
-                        await Task.Delay(25000, cancellationToken);
+                        await Task.Delay(25, cancellationToken);
                         continue;
                     }
 

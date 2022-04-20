@@ -40,7 +40,7 @@ namespace SummarisationSample.OrderService.Service.Messaging
         {
             await EnqueueUnpublishedMessagesAsync(_publishingQueue);
 
-            await _publisher.StartPublishingAsync("summarisation.order", stoppingToken);
+            await _publisher.StartPublishingAsync("Order", stoppingToken);
         }
 
         #region Private Helper Methods
