@@ -1,0 +1,41 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+!define DEVICONS https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/master/devicons2
+!define CLOUDICONS https://raw.githubusercontent.com/plantuml/plantuml-stdlib/master/cloudinsight
+!include DEVICONS/react_original.puml
+!include DEVICONS/postgresql.puml
+!include CLOUDICONS/kafka.puml
+
+title SummarisationSample: Containers
+
+Person(customer, "Customer")
+Person(manager, "Manager")
+
+System_Boundary(summarisationSample, "Summarisation Sample") {
+    Container(customerSite, "Customer Website", "React", "Customer website, through which they manage their orders", , $sprite="react_original")
+    Container(customerGateway, "Customer API Gateway", "C#, WebAPI", "API Gateway through which the customer website accesses underlying services")
+    Rel(customerSite, customerGateway, "Uses", "HTTPS")
+
+    Container(managementSite, "Management Website", "React", "Management website, through which managers will manage the system", $sprite="react_original")
+    Container(managementGateway, "Customer API Gateway", "C#, WebAPI", "API Gateway through which the management website accesses underlying services")
+    Rel(managementSite, managementGateway, "Uses", "HTTPS")
+
+    ContainerDb(kafka, "Message Bus", "Kafka", "Messaging", $sprite="kafka")
+
+    Container(ordersService, "Order Service", "C#, WebAPI", "Order microservice, responsible for managing orders")
+    ContainerDb(ordersDB, "Orders Database", "PostgreSQL", "Holds order information", $sprite="postgresql")
+    Rel(ordersService, ordersDB, "CRUD", "Entity Framework")
+    Rel(ordersService, kafka, "Publishes Messages", "TCP")
+    Rel(customerGateway, ordersService, "Place Order", "HTTPS")
+
+    Container(activitiesService, "Activity Service", "C#, WebAPI", "Activity microservice, responsible for tracking important system activities")
+    ContainerDb(activitiesDB, "Activities Database", "PostgreSQL", "Holds activity summaries", $sprite="postgresql")
+    Rel(activitiesService, activitiesDB, "CRUD", "Entity Framework")
+    Rel(activitiesService, kafka, "Subscribes to Messages", "TCP")
+    Rel(managementGateway, activitiesService, "Get Summary", "HTTPS")
+}
+
+Rel(customer, customerSite, "Places Order", "HTTPS")
+Rel(manager, managementSite, "Requests Summary", "HTTPS")
+
+@enduml

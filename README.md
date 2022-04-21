@@ -30,11 +30,12 @@ This is just a sample, and is not complete. The following tasks would need to be
 
 1. Create persistent repository implementations - currently only in-memory implementations exist
 2. Consider protecting against duplicate failed messages being broadcast should multiple OrderService instances restart concurrently
-3. Add monitoring of messages that have exceeded the maximum failure threshold
-4. Delete persisted messages that are older than a maximum retention period
-5. Identify and handle poison messages in the ActivityService
-6. Move additional parameters to configuration, such as message processing delay, backoff delay, maximum failure threshold
-7. Unit tests
-8. Add middleware to protect against exceptions thrown by the controllers
-9. Add a persistent logging provider
-10. Add health checks, to be used to monitor service health (e.g. by a liveness probe in Kubernetes) - especially in the background services.
+3. Add authentication, authorisation and validation
+4. Add monitoring of messages that have exceeded the maximum failure threshold
+5. Delete persisted messages that are older than a maximum retention period
+6. Identify and handle poison messages in the ActivityService
+7. Move additional parameters to configuration, such as message processing delay, backoff delay, maximum failure threshold
+8. Unit tests
+9. Add middleware to protect against exceptions thrown by the controllers
+10. Add a persistent logging provider
+11. Add health checks, to be used to monitor service health (e.g. by a liveness probe in Kubernetes) - especially in the background services.

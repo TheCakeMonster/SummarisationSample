@@ -1,0 +1,12 @@
+@startuml system-context
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+title SummarisationSample: System Context
+
+Person(customer, "Customer")
+Person(manager, "Manager")
+System(summarisationSample, "Summarisation Sample")
+Rel(customer, summarisationSample, "Place Order", "HTTPS")
+Rel(manager, summarisationSample, "Get Activity Summary", "HTTPS")
+
+@enduml
