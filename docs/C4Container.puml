@@ -22,17 +22,17 @@ System_Boundary(summarisationSample, "Summarisation Sample") {
 
     ContainerDb(kafka, "Message Bus", "Kafka", "Messaging", $sprite="kafka")
 
-    Container(ordersService, "Order Service", "C#, WebAPI", "Order microservice, responsible for managing orders")
-    ContainerDb(ordersDB, "Orders Database", "PostgreSQL", "Holds order information", $sprite="postgresql")
-    Rel(ordersService, ordersDB, "CRUD", "Entity Framework")
-    Rel(ordersService, kafka, "Publishes Messages", "TCP")
-    Rel(customerGateway, ordersService, "Place Order", "HTTPS")
+    Container(orderService, "Order Service", "C#, WebAPI", "Order microservice, responsible for managing orders")
+    ContainerDb(ordersDB, "Orders Database", "PostgreSQL", "Holds order details and status", $sprite="postgresql")
+    Rel(orderService, ordersDB, "CRUD", "Entity Framework")
+    Rel(orderService, kafka, "Publishes Messages", "TCP")
+    Rel(customerGateway, orderService, "Place Order", "HTTPS")
 
-    Container(activitiesService, "Activity Service", "C#, WebAPI", "Activity microservice, responsible for tracking important system activities")
-    ContainerDb(activitiesDB, "Activities Database", "PostgreSQL", "Holds activity summaries", $sprite="postgresql")
-    Rel(activitiesService, activitiesDB, "CRUD", "Entity Framework")
-    Rel(activitiesService, kafka, "Subscribes to Messages", "TCP")
-    Rel(managementGateway, activitiesService, "Get Summary", "HTTPS")
+    Container(activityService, "Activity Service", "C#, WebAPI", "Activity microservice, responsible for tracking important system activities")
+    ContainerDb(activitiesDB, "Activities Database", "PostgreSQL", "Holds summaries/statistics of the activities performed in the system", $sprite="postgresql")
+    Rel(activityService, activitiesDB, "CRUD", "Entity Framework")
+    Rel(activityService, kafka, "Subscribes to Messages", "TCP")
+    Rel(managementGateway, activityService, "Get Summary", "HTTPS")
 }
 
 Rel(customer, customerSite, "Places Order", "HTTPS")

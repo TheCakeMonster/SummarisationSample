@@ -9,11 +9,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Diagrams", "Diagrams", "{DA
 		C4SystemContext.puml = C4SystemContext.puml
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Templates", "Templates", "{0D0F88C4-F52C-4C46-8CB1-2DD828A51A43}"
-	ProjectSection(SolutionItems) = preProject
-		Templates\C4_Context.puml = Templates\C4_Context.puml
-	EndProjectSection
-EndProject
 Global
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
